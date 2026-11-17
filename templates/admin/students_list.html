@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Student Records - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Student Records & Admissions</h2>
+    <p class="page-subtitle">Directory of enrolled and archived students with advanced filters</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.student_create') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>New Admission</span>
+    </a>
+  </div>
+</div>
+
+<!-- Search & Filters Bar -->
+<div class="card-custom mb-4">
+  <div class="card-custom-body p-3">
+    <form method="GET" action="{{ url_for('admin.students') }}" class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Search by name, admission no, phone..." value="{{ search }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select name="section_id" class="form-select">
+          <option value="">All School Sections</option>
+          {% for sec in sections %}
+            <option value="{{ sec.id }}" {% if selected_section == sec.id|string %}selected{% endif %}>{{ sec.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="class_id" class="form-select">
+          <option value="">All Classes</option>
+          {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class == c.id|string %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary-custom flex-grow-1">Filter</button>
+        <a href="{{ url_for('admin.students') }}" class="btn btn-light border" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Students Data Table -->
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title">
+      <i class="fa-solid fa-users text-primary me-2"></i>Students Directory
+      <span class="badge bg-light text-dark border ms-2">{{ students|length }} Students</span>
+    </h5>
+    <div>
+      <input type="text" id="tableQuickSearch" class="form-control form-control-sm" placeholder="Quick filter on page..." style="width: 200px;">
+    </div>
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom filterable-table mb-0">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Admission No</th>
+          <th>Section & Class</th>
+          <th>Roll No</th>
+          <th>Guardian & Phone</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for st in students %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <img src="{% if st.photo_path %}{{ url_for('static', filename=st.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+                     alt="Photo" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;">
+                <div>
+                  <a href="{{ url_for('admin.student_view', student_id=st.id) }}" class="fw-bold text-dark text-decoration-none hover-primary">
+                    {{ st.full_name }}
+                  </a>
+                  <div class="text-muted small">{{ st.gender or 'N/A' }} | DOB: {{ st.dob or 'N/A' }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge-custom badge-secondary">{{ st.admission_number }}</span></td>
+            <td>
+              <div class="fw-semibold">{{ st.class_name }} - {{ st.class_section_name }}</div>
+              <div class="text-muted" style="font-size: 0.72rem;">{{ st.section_name }}</div>
+            </td>
+            <td><span class="fw-bold">{{ st.roll_number or '-' }}</span></td>
+            <td>
+              <div>{{ st.guardian_name or st.father_name or '-' }}</div>
+              <div class="text-muted small"><i class="fa-solid fa-phone me-1"></i>{{ st.guardian_phone or '-' }}</div>
+            </td>
+            <td>
+              {% if st.status == 'Active' %}
+                <span class="badge-custom badge-success"><i class="fa-solid fa-circle-check"></i> Active</span>
+              {% elif st.status == 'Archived' %}
+                <span class="badge-custom badge-secondary">Archived</span>
+              {% else %}
+                <span class="badge-custom badge-warning">{{ st.status }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('admin.student_view', student_id=st.id) }}" class="btn btn-light border" title="View Full Profile">
+                  <i class="fa-solid fa-eye text-primary"></i>
+                </a>
+                <a href="{{ url_for('admin.student_edit', student_id=st.id) }}" class="btn btn-light border" title="Edit Record">
+                  <i class="fa-solid fa-pen-to-square text-secondary"></i>
+                </a>
+                <a href="{{ url_for('admin.student_pdf', student_id=st.id) }}" target="_blank" class="btn btn-light border" title="Download Printable PDF">
+                  <i class="fa-solid fa-file-pdf text-danger"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="fa-solid fa-user-slash fs-1 mb-3 opacity-50"></i>
+              <p class="mb-2">No students match your search criteria.</p>
+              <a href="{{ url_for('admin.student_create') }}" class="btn btn-sm btn-primary-custom">Admit a Student</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

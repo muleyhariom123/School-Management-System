@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}My Fees & Receipts - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">My Fee Statement & Receipts</h2>
+    <p class="page-subtitle">Personal academic fee ledger, payment history, and downloadable PDF receipts</p>
+  </div>
+</div>
+
+<!-- Financial Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card primary">
+      <div class="stat-icon primary"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Total Assigned</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.total_assigned) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card warning">
+      <div class="stat-icon warning"><i class="fa-solid fa-tag"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Approved Concessions</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.total_concession) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card success">
+      <div class="stat-icon success"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Total Paid</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.total_paid) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card {% if financial.outstanding_balance > 0 %}danger{% else %}success{% endif %}">
+      <div class="stat-icon {% if financial.outstanding_balance > 0 %}danger{% else %}success{% endif %}">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </div>
+      <div class="stat-details">
+        <div class="stat-label">Outstanding Due</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.outstanding_balance) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 1. Assigned Fee Structure Breakdown -->
+<div class="card-custom mb-4">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title"><i class="fa-solid fa-list-check text-primary me-2"></i>Assigned Fee Items</h5>
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom mb-0">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Due Date</th>
+          <th>Assigned Amount</th>
+          <th>Approved Concession</th>
+          <th>Amount Paid</th>
+          <th>Remaining Due</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for af in assigned_fees %}
+          {% set effective = af.assigned_amount - af.concession_amount %}
+          {% set rem = effective - af.item_paid %}
+          <tr>
+            <td class="fw-bold text-dark">{{ af.fee_category }}</td>
+            <td class="text-muted small">{{ af.due_date or 'End of Term' }}</td>
+            <td>{{ format_currency(af.assigned_amount) }}</td>
+            <td class="text-warning">{{ format_currency(af.concession_amount) }}</td>
+            <td class="text-success fw-bold">{{ format_currency(af.item_paid) }}</td>
+            <td class="{% if rem > 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">
+              {{ format_currency(rem if rem > 0 else 0) }}
+            </td>
+            <td>
+              {% if af.item_paid >= effective and effective > 0 %}
+                <span class="badge-custom badge-success">Paid</span>
+              {% elif af.item_paid > 0 %}
+                <span class="badge-custom badge-warning">Partial</span>
+              {% else %}
+                <span class="badge-custom badge-danger">Pending</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No fee structures assigned yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 2. Payment Transactions & Receipts -->
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title"><i class="fa-solid fa-clock-rotate-left text-success me-2"></i>My Payment Receipts</h5>
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom mb-0">
+      <thead>
+        <tr>
+          <th>Receipt No</th>
+          <th>Date</th>
+          <th>Amount Paid</th>
+          <th>Payment Method</th>
+          <th>Reference</th>
+          <th class="text-end">Official PDF Receipt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+          <tr>
+            <td class="fw-bold">{{ p.receipt_number }}</td>
+            <td>{{ p.payment_date }}</td>
+            <td class="fw-bold text-success fs-6">{{ format_currency(p.amount_paid) }}</td>
+            <td><span class="badge-custom badge-primary">{{ p.payment_method }}</span></td>
+            <td class="text-muted small">{{ p.transaction_reference or '-' }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('student.download_receipt', payment_id=p.id) }}" class="btn btn-sm btn-outline-danger">
+                <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center py-4 text-muted">No fee payments recorded on file.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

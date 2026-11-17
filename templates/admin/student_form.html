@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}{% if student %}Edit Student - {{ student.full_name }}{% else %}New Student Admission{% endif %} - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">{% if student %}Edit Student Record{% else %}Student Admission Registration{% endif %}</h2>
+    <p class="page-subtitle">{% if student %}Update official academic and personal details for {{ student.full_name }}{% else %}Complete official admission form and create student portal credentials{% endif %}</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.students') }}" class="btn btn-light border">
+      <i class="fa-solid fa-arrow-left me-1"></i> Back to Directory
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-xl-11">
+    <div class="card-custom">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title">
+          <i class="fa-solid fa-id-card text-primary me-2"></i>Official Admission Form
+        </h5>
+        <span class="badge-custom badge-info">* Required Fields</span>
+      </div>
+
+      <div class="card-custom-body p-4">
+        <form action="{% if student %}{{ url_for('admin.student_edit', student_id=student.id) }}{% else %}{{ url_for('admin.student_create') }}{% endif %}" method="POST" enctype="multipart/form-data">
+
+          <!-- 1. Academic & School Placement -->
+          <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+            <i class="fa-solid fa-school-flag text-primary me-2"></i>1. Academic Placement & Identity
+          </h6>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6 col-lg-4">
+              <label class="form-label">Student Full Name *</label>
+              <input type="text" name="full_name" class="form-control" value="{{ student.full_name if student else '' }}" placeholder="First and last name" required>
+            </div>
+            <div class="col-md-6 col-lg-4">
+              <label class="form-label">Admission Number *</label>
+              <input type="text" name="admission_number" class="form-control" value="{{ student.admission_number if student else suggested_adm }}" required {% if student %}readonly{% endif %}>
+              <div class="form-text">Must be unique across the school.</div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+              <label class="form-label">Academic Year *</label>
+              <select name="academic_year_id" class="form-select" required>
+                {% for ay in academic_years %}
+                  <option value="{{ ay.id }}" {% if student and student.academic_year_id == ay.id %}selected{% elif not student and ay.is_current %}selected{% endif %}>
+                    {{ ay.name }} {% if ay.is_current %}(Current){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">School Section *</label>
+              <select name="school_section_id" id="school_section_id" class="form-select" required>
+                <option value="">-- Select Section --</option>
+                {% for sec in sections %}
+                  <option value="{{ sec.id }}" {% if student and student.school_section_id == sec.id %}selected{% endif %}>
+                    {{ sec.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Class / Grade *</label>
+              <select name="class_id" id="class_id" class="form-select" required>
+                <option value="">-- Select Class --</option>
+                {% for c in classes %}
+                  <option value="{{ c.id }}" {% if student and student.class_id == c.id %}selected{% endif %}>
+                    {{ c.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Class Section / Division *</label>
+              <select name="class_section_id" id="class_section_id" class="form-select">
+                <option value="">-- Select Division (A, B, C) --</option>
+                {% for cs in class_sections %}
+                  <option value="{{ cs.id }}" {% if student and student.class_section_id == cs.id %}selected{% endif %}>
+                    Section {{ cs.section_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">Roll Number</label>
+              <input type="text" name="roll_number" class="form-control" value="{{ student.roll_number if student else '' }}" placeholder="e.g. 14">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Date of Birth</label>
+              <input type="date" name="dob" class="form-control" value="{{ student.dob if student else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Gender</label>
+              <select name="gender" class="form-select">
+                <option value="Male" {% if student and student.gender == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if student and student.gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if student and student.gender == 'Other' %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 2. Photograph & Admission Meta -->
+          <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+            <div class="col-md-6 d-flex align-items-center gap-3">
+              <img src="{% if student and student.photo_path %}{{ url_for('static', filename=student.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+                   alt="Avatar" class="rounded border p-1 bg-white" style="width: 70px; height: 70px; object-fit: cover;">
+              <div class="flex-grow-1">
+                <label class="form-label fw-bold">Student Photograph</label>
+                <input type="file" name="photo" class="form-control" accept="image/png, image/jpeg, image/webp">
+                <div class="form-text">Allowed: JPG, PNG, WEBP.</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Admission Date</label>
+              <input type="date" name="admission_date" class="form-control" value="{{ student.admission_date if student else '' }}">
+            </div>
+            {% if student %}
+            <div class="col-md-3">
+              <label class="form-label">Enrollment Status</label>
+              <select name="status" class="form-select">
+                <option value="Active" {% if student.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="Archived" {% if student.status == 'Archived' %}selected{% endif %}>Archived</option>
+                <option value="Suspended" {% if student.status == 'Suspended' %}selected{% endif %}>Suspended</option>
+              </select>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- 3. Guardian & Family Details -->
+          <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 mt-4">
+            <i class="fa-solid fa-people-roof text-primary me-2"></i>2. Guardian & Emergency Contact
+          </h6>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Father's Name</label>
+              <input type="text" name="father_name" class="form-control" value="{{ student.father_name if student else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Mother's Name</label>
+              <input type="text" name="mother_name" class="form-control" value="{{ student.mother_name if student else '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Primary Guardian Name</label>
+              <input type="text" name="guardian_name" class="form-control" value="{{ student.guardian_name if student else '' }}" placeholder="If different from parents">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Guardian Phone Number *</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fa-solid fa-phone"></i></span>
+                <input type="tel" name="guardian_phone" class="form-control" value="{{ student.guardian_phone if student else '' }}" placeholder="+1 555-0192" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Emergency Contact Number</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fa-solid fa-triangle-exclamation text-danger"></i></span>
+                <input type="tel" name="emergency_contact" class="form-control" value="{{ student.emergency_contact if student else '' }}">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Student Email / Contact</label>
+              <input type="email" name="student_email" class="form-control" value="{{ student.student_email if student else '' }}" placeholder="student@example.com">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-8">
+              <label class="form-label">Residential Address</label>
+              <textarea name="residential_address" rows="2" class="form-control">{{ student.residential_address if student else '' }}</textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Previous School Attended</label>
+              <input type="text" name="previous_school" class="form-control" value="{{ student.previous_school if student else '' }}">
+            </div>
+          </div>
+
+          <!-- 4. Student Portal Login Credentials (Only on creation) -->
+          {% if not student %}
+          <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 mt-4">
+            <i class="fa-solid fa-key text-primary me-2"></i>3. Student Portal Account Credentials
+          </h6>
+          <div class="row g-3 mb-4 bg-light p-3 rounded-3 border">
+            <div class="col-md-6">
+              <label class="form-label">Student Username</label>
+              <input type="text" name="username" class="form-control" placeholder="Defaults to admission number">
+              <div class="form-text">Student will use this (or admission number) to sign in.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Initial Password</label>
+              <input type="text" name="password" class="form-control" placeholder="Auto-generated if left blank">
+              <div class="form-text">Defaults to <code>Stu@{AdmissionNumber}</code>.</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-end gap-2 border-top pt-4">
+            <a href="{{ url_for('admin.students') }}" class="btn btn-light border px-4">Cancel</a>
+            <button type="submit" class="btn btn-primary-custom px-4">
+              <i class="fa-solid fa-floppy-disk me-2"></i> {% if student %}Save Student Changes{% else %}Complete Admission & Enrol{% endif %}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

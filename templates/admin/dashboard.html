@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Headmaster Dashboard - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Administrative Overview</h2>
+    <p class="page-subtitle">Central intelligence and operational metrics for {{ school_settings.school_name }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('admin.student_create') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>New Admission</span>
+    </a>
+    <a href="{{ url_for('admin.payments') }}" class="btn btn-light border d-flex align-items-center gap-2">
+      <i class="fa-solid fa-hand-holding-dollar text-success"></i>
+      <span>Record Fee</span>
+    </a>
+  </div>
+</div>
+
+<!-- 1. Key Operational Metric Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card primary">
+      <div class="stat-icon primary">
+        <i class="fa-solid fa-user-graduate"></i>
+      </div>
+      <div class="stat-details">
+        <div class="stat-label">Enrolled Students</div>
+        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-meta text-primary fw-medium">Active Enrolment</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card info">
+      <div class="stat-icon info">
+        <i class="fa-solid fa-chalkboard-user"></i>
+      </div>
+      <div class="stat-details">
+        <div class="stat-label">Teaching Staff</div>
+        <div class="stat-value">{{ total_teachers }}</div>
+        <div class="stat-meta text-muted">Active Faculty</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card success">
+      <div class="stat-icon success">
+        <i class="fa-solid fa-sack-dollar"></i>
+      </div>
+      <div class="stat-details">
+        <div class="stat-label">Total Fees Collected</div>
+        <div class="stat-value">{{ format_currency(total_collected) }}</div>
+        <div class="stat-meta text-success">Assigned: {{ format_currency(total_assigned) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card danger">
+      <div class="stat-icon danger">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+      </div>
+      <div class="stat-details">
+        <div class="stat-label">Outstanding Balance</div>
+        <div class="stat-value">{{ format_currency(total_outstanding) }}</div>
+        <div class="stat-meta text-danger">Pending Dues</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Attendance & Analytics Row -->
+<div class="row g-4 mb-4">
+  <!-- Attendance Summary Card -->
+  <div class="col-lg-4">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-clipboard-check text-primary me-2"></i>Today's Attendance</h5>
+        <span class="badge-custom badge-primary">{{ attendance_rate }}% Present</span>
+      </div>
+      <div class="card-custom-body">
+        {% if today_marked > 0 %}
+          <div class="d-flex align-items-center justify-content-center my-3" style="height: 180px;">
+            <canvas id="attendanceDoughnutChart"></canvas>
+          </div>
+          <div class="row g-2 text-center pt-2 border-top">
+            <div class="col-3">
+              <div class="text-muted small">Present</div>
+              <div class="fw-bold text-success">{{ present_cnt }}</div>
+            </div>
+            <div class="col-3">
+              <div class="text-muted small">Absent</div>
+              <div class="fw-bold text-danger">{{ absent_cnt }}</div>
+            </div>
+            <div class="col-3">
+              <div class="text-muted small">Late</div>
+              <div class="fw-bold text-warning">{{ late_cnt }}</div>
+            </div>
+            <div class="col-3">
+              <div class="text-muted small">Excused</div>
+              <div class="fw-bold text-info">{{ excused_cnt }}</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="fa-regular fa-calendar-xmark fs-1 text-secondary mb-3 opacity-50"></i>
+            <p class="mb-3">Attendance has not been recorded yet today.</p>
+            <a href="{{ url_for('admin.attendance') }}" class="btn btn-sm btn-primary-custom">
+              <i class="fa-solid fa-check me-1"></i> Mark Today's Attendance
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Students Distribution by Section Chart -->
+  <div class="col-lg-8">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-chart-column text-primary me-2"></i>Students by School Section</h5>
+        <a href="{{ url_for('admin.sections_classes') }}" class="text-primary text-decoration-none small fw-semibold">
+          Manage Sections <i class="fa-solid fa-chevron-right ms-1"></i>
+        </a>
+      </div>
+      <div class="card-custom-body">
+        <div style="height: 240px; position: relative;">
+          <canvas id="sectionBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Quick Action Tiles -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('admin.student_create') }}" class="quick-action-btn">
+      <i class="fa-solid fa-user-plus text-primary"></i>
+      <span class="fw-bold">Admit Student</span>
+      <small class="text-muted">Register new pupil</small>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('admin.payments') }}" class="quick-action-btn">
+      <i class="fa-solid fa-money-bill-transfer text-success"></i>
+      <span class="fw-bold">Collect Fee</span>
+      <small class="text-muted">Record cash/UPI receipt</small>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('admin.attendance') }}" class="quick-action-btn">
+      <i class="fa-solid fa-user-check text-info"></i>
+      <span class="fw-bold">Mark Attendance</span>
+      <small class="text-muted">Daily class registers</small>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{{ url_for('admin.notices') }}" class="quick-action-btn">
+      <i class="fa-solid fa-bullhorn text-warning"></i>
+      <span class="fw-bold">Post Notice</span>
+      <small class="text-muted">Broadcast circular</small>
+    </a>
+  </div>
+</div>
+
+<!-- 4. Recent Admissions and Transactions -->
+<div class="row g-4">
+  <!-- Recent Admissions -->
+  <div class="col-lg-6">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-user-clock text-primary me-2"></i>Recent Admissions</h5>
+        <a href="{{ url_for('admin.students') }}" class="text-primary text-decoration-none small fw-semibold">View All</a>
+      </div>
+      <div class="p-0 table-responsive">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Admission No</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for st in recent_students %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <img src="{% if st.photo_path %}{{ url_for('static', filename=st.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+                         alt="photo" class="rounded-circle" style="width: 30px; height: 30px; object-fit: cover;">
+                    <a href="{{ url_for('admin.student_view', student_id=st.id) }}" class="fw-bold text-dark text-decoration-none hover-primary">
+                      {{ st.full_name }}
+                    </a>
+                  </div>
+                </td>
+                <td>{{ st.class_name }} ({{ st.class_section_name }})</td>
+                <td><span class="badge-custom badge-secondary">{{ st.admission_number }}</span></td>
+                <td class="text-muted small">{{ st.admission_date }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" class="text-center py-4 text-muted">No students admitted yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Payments -->
+  <div class="col-lg-6">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-receipt text-success me-2"></i>Recent Fee Payments</h5>
+        <a href="{{ url_for('admin.payments') }}" class="text-primary text-decoration-none small fw-semibold">View All</a>
+      </div>
+      <div class="p-0 table-responsive">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Student</th>
+              <th>Amount</th>
+              <th>Method</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in recent_payments %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('admin.payment_receipt', payment_id=p.id) }}" class="fw-bold text-primary text-decoration-none">
+                    {{ p.receipt_number }}
+                  </a>
+                </td>
+                <td>
+                  <div class="fw-medium text-dark">{{ p.student_name }}</div>
+                  <div class="text-muted" style="font-size: 0.72rem;">{{ p.admission_number }}</div>
+                </td>
+                <td class="fw-bold text-success">{{ format_currency(p.amount_paid) }}</td>
+                <td><span class="badge-custom badge-primary">{{ p.payment_method }}</span></td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" class="text-center py-4 text-muted">No fee payments recorded yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // 1. document.addEventListener('DOMContentLoaded', function () {
+    {% if today_marked > 0 %}
+    const attCtx = document.getElementById('attendanceDoughnutChart');
+    if (attCtx) {
+      new Chart(attCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Present', 'Absent', 'Late', 'Excused'],
+          datasets: [{
+            data: [{{ present_cnt }}, {{ absent_cnt }}, {{ late_cnt }}, {{ excused_cnt }}],
+            backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+    {% endif %}
+
+    // 2. Section Student Count Bar Chart
+    const secCtx = document.getElementById('sectionBarChart');
+    if (secCtx) {
+      const sectionLabels = [{% for sec in section_dist %}"{{ sec.section_name }}",{% endfor %}];
+      const sectionCounts = [{% for sec in section_dist %}{{ sec.student_count }},{% endfor %}];
+
+      new Chart(secCtx, {
+        type: 'bar',
+        data: {
+          labels: sectionLabels.length ? sectionLabels : ['No Sections Configured'],
+          datasets: [{
+            label: 'Enrolled Students',
+            data: sectionCounts.length ? sectionCounts : [0],
+            backgroundColor: 'rgba(37, 99, 235, 0.85)',
+            borderColor: '#2563eb',
+            borderWidth: 1,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, font: { size: 11 } },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

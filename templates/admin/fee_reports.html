@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Reports - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Financial Reports & Fee Audits</h2>
+    <p class="page-subtitle">Class-wise collection summaries, outstanding balances, and CSV exports</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.fee_reports', export='csv') }}" class="btn btn-success d-flex align-items-center gap-2">
+      <i class="fa-solid fa-file-csv"></i>
+      <span>Export Outstanding Dues (CSV)</span>
+    </a>
+  </div>
+</div>
+
+<!-- Financial Summary Top Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card primary">
+      <div class="stat-icon primary"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Total Fees Assigned</div>
+        <div class="stat-value fs-4">{{ format_currency(all_assigned) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card success">
+      <div class="stat-icon success"><i class="fa-solid fa-money-bill-wave"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Total Realized Collection</div>
+        <div class="stat-value fs-4">{{ format_currency(all_collected) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card warning">
+      <div class="stat-icon warning"><i class="fa-solid fa-tag"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Approved Concessions</div>
+        <div class="stat-value fs-4">{{ format_currency(all_concession) }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card danger">
+      <div class="stat-icon danger"><i class="fa-solid fa-hourglass-half"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Net Outstanding Dues</div>
+        <div class="stat-value fs-4">{{ format_currency(all_outstanding) }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 1. Class-wise Collection Summary -->
+<div class="card-custom mb-4">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title"><i class="fa-solid fa-chart-pie text-primary me-2"></i>Class-Wise Financial Breakdown</h5>
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom mb-0">
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Section</th>
+          <th>Active Students</th>
+          <th>Total Assigned</th>
+          <th>Concessions</th>
+          <th>Collected</th>
+          <th>Outstanding</th>
+          <th>Realization %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in class_reports %}
+          {% set effective = c.total_assigned - c.total_concession %}
+          {% set out = effective - c.total_collected %}
+          {% set pct = (c.total_collected / effective * 100) if effective > 0 else 0 %}
+          <tr>
+            <td class="fw-bold text-dark">{{ c.class_name }}</td>
+            <td><span class="badge-custom badge-primary">{{ c.section_name }}</span></td>
+            <td>{{ c.total_students }}</td>
+            <td>{{ format_currency(c.total_assigned) }}</td>
+            <td class="text-warning">{{ format_currency(c.total_concession) }}</td>
+            <td class="text-success fw-bold">{{ format_currency(c.total_collected) }}</td>
+            <td class="{% if out > 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">
+              {{ format_currency(out if out > 0 else 0) }}
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height: 6px;">
+                  <div class="progress-bar bg-success" style="width: {{ pct|round }}%;"></div>
+                </div>
+                <span class="small fw-bold text-muted">{{ pct|round(1) }}%</span>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="text-center py-4 text-muted">No class financial records available.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 2. Student-wise Outstanding Dues -->
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title">
+      <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Students With Outstanding Balances
+      <span class="badge bg-danger-subtle text-danger border ms-2">{{ outstanding_students|length }} Pending</span>
+    </h5>
+    <input type="text" id="tableQuickSearch" class="form-control form-control-sm" placeholder="Quick filter table..." style="width: 220px;">
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom filterable-table mb-0">
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>Admission No</th>
+          <th>Class</th>
+          <th>Guardian Phone</th>
+          <th>Assigned</th>
+          <th>Paid</th>
+          <th>Outstanding Due</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in outstanding_students %}
+          <tr>
+            <td class="fw-bold text-dark">
+              <a href="{{ url_for('admin.student_view', student_id=s.id) }}" class="text-dark text-decoration-none hover-primary">
+                {{ s.full_name }}
+              </a>
+            </td>
+            <td><span class="badge-custom badge-secondary">{{ s.admission_number }}</span></td>
+            <td>{{ s.class_name }}</td>
+            <td><i class="fa-solid fa-phone text-muted me-1"></i>{{ s.guardian_phone or '-' }}</td>
+            <td>{{ format_currency(s.assigned) }}</td>
+            <td class="text-success">{{ format_currency(s.paid) }}</td>
+            <td class="text-danger fw-bold fs-6">{{ format_currency(s.outstanding) }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('admin.student_view', student_id=s.id) }}" class="btn btn-sm btn-light border">
+                <i class="fa-solid fa-eye me-1"></i> Ledger
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center py-4 text-success fw-bold">
+              <i class="fa-solid fa-circle-check fs-2 mb-2 text-success"></i>
+              <p class="mb-0">All student fees are fully cleared! Zero outstanding balances.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

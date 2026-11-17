@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Logs - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">System Audit Trail & Security Logs</h2>
+    <p class="page-subtitle">Immutable chronological log of administrative operations, logins, fee collections, and updates</p>
+  </div>
+</div>
+
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title"><i class="fa-solid fa-shield-halved text-primary me-2"></i>Recent Activity Logs</h5>
+    <input type="text" id="tableQuickSearch" class="form-control form-control-sm" placeholder="Search actions..." style="width: 220px;">
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom filterable-table mb-0">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Action Type</th>
+          <th>Entity</th>
+          <th>Details</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in logs %}
+          <tr>
+            <td class="text-muted small" style="white-space: nowrap;">{{ l.created_at }}</td>
+            <td>
+              <span class="fw-bold text-dark">{{ l.username or 'System' }}</span>
+              {% if l.user_full_name %}<small class="text-muted d-block">({{ l.user_full_name }})</small>{% endif %}
+            </td>
+            <td>
+              {% if 'LOGIN' in l.action %}
+                <span class="badge-custom badge-info">{{ l.action }}</span>
+              {% elif 'PAYMENT' in l.action %}
+                <span class="badge-custom badge-success">{{ l.action }}</span>
+              {% elif 'ADMIT' in l.action %}
+                <span class="badge-custom badge-primary">{{ l.action }}</span>
+              {% elif 'UPDATE' in l.action or 'SETUP' in l.action %}
+                <span class="badge-custom badge-warning">{{ l.action }}</span>
+              {% else %}
+                <span class="badge-custom badge-secondary">{{ l.action }}</span>
+              {% endif %}
+            </td>
+            <td><code class="small">{{ l.target_entity or '-' }}</code></td>
+            <td class="small text-dark">{{ l.details }}</td>
+            <td class="text-muted small"><code>{{ l.ip_address }}</code></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center py-4 text-muted">No audit records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

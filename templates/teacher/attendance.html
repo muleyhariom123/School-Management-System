@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Class Attendance - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Daily Attendance Submission</h2>
+    <p class="page-subtitle">Mark daily attendance for your assigned classes</p>
+  </div>
+</div>
+
+<!-- Class & Date Selection -->
+<div class="card-custom mb-4">
+  <div class="card-custom-body p-3">
+    <form method="GET" action="{{ url_for('teacher.attendance') }}" class="row g-2 align-items-center">
+      <div class="col-md-3">
+        <label class="form-label small fw-bold mb-1">Date</label>
+        <input type="date" name="date" class="form-control" value="{{ selected_date }}" onchange="this.form.submit()">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold mb-1">Assigned Class</label>
+        <select name="class_id" class="form-select" onchange="this.form.submit()">
+          {% for c in classes %}
+            <option value="{{ c.id }}" {% if selected_class_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-bold mb-1">Division / Section</label>
+        <select name="class_section_id" class="form-select" onchange="this.form.submit()">
+          {% for cs in class_sections %}
+            <option value="{{ cs.id }}" {% if selected_section_id == cs.id %}selected{% endif %}>Section {{ cs.section_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary-custom w-100">Load Roster</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Attendance Submission Form -->
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title">
+      <i class="fa-solid fa-clipboard-user text-primary me-2"></i>Class Attendance Register &bull; {{ selected_date }}
+      <span class="badge bg-light text-dark border ms-2">{{ roster|length }} Students</span>
+    </h5>
+    {% if roster %}
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-outline-success" onclick="markAllAttendance('Present')">
+        <i class="fa-solid fa-check-double me-1"></i> All Present
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-danger" onclick="markAllAttendance('Absent')">
+        <i class="fa-solid fa-xmark me-1"></i> All Absent
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if roster %}
+  <form action="{{ url_for('teacher.attendance') }}" method="POST">
+    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="class_id" value="{{ selected_class_id }}">
+    <input type="hidden" name="class_section_id" value="{{ selected_section_id }}">
+
+    <div class="table-responsive p-0">
+      <table class="table-custom mb-0">
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Student</th>
+            <th>Admission No</th>
+            <th class="text-center" style="width: 320px;">Attendance Status</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in roster %}
+            <input type="hidden" name="student_ids" value="{{ st.id }}">
+            <tr>
+              <td class="fw-bold">{{ st.roll_number or '-' }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <img src="{% if st.photo_path %}{{ url_for('static', filename=st.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+                       alt="Photo" class="rounded-circle border" style="width: 32px; height: 32px; object-fit: cover;">
+                  <span class="fw-bold text-dark">{{ st.full_name }}</span>
+                </div>
+              </td>
+              <td><span class="badge-custom badge-secondary">{{ st.admission_number }}</span></td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm w-100" role="group">
+                  <input type="radio" class="btn-check" name="status_{{ st.id }}" id="tp_{{ st.id }}" value="Present" {% if st.attendance_status == 'Present' or not st.attendance_status %}checked{% endif %}>
+                  <label class="btn btn-outline-success" for="tp_{{ st.id }}">Present</label>
+
+                  <input type="radio" class="btn-check" name="status_{{ st.id }}" id="ta_{{ st.id }}" value="Absent" {% if st.attendance_status == 'Absent' %}checked{% endif %}>
+                  <label class="btn btn-outline-danger" for="ta_{{ st.id }}">Absent</label>
+
+                  <input type="radio" class="btn-check" name="status_{{ st.id }}" id="tl_{{ st.id }}" value="Late" {% if st.attendance_status == 'Late' %}checked{% endif %}>
+                  <label class="btn btn-outline-warning" for="tl_{{ st.id }}">Late</label>
+
+                  <input type="radio" class="btn-check" name="status_{{ st.id }}" id="te_{{ st.id }}" value="Excused" {% if st.attendance_status == 'Excused' %}checked{% endif %}>
+                  <label class="btn btn-outline-info" for="te_{{ st.id }}">Leave</label>
+                </div>
+              </td>
+              <td>
+                <input type="text" name="remarks_{{ st.id }}" class="form-control form-control-sm" placeholder="Notes" value="{{ st.attendance_remarks or '' }}">
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-3 bg-light border-top d-flex justify-content-end">
+      <button type="submit" class="btn btn-primary-custom px-4">
+        <i class="fa-solid fa-floppy-disk me-1"></i> Submit Attendance Report
+      </button>
+    </div>
+  </form>
+  {% else %}
+    <div class="text-center py-5 text-muted">
+      <p class="mb-0">No active students found in this class section.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Announcements & Notices - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">School Announcements & Notices</h2>
+    <p class="page-subtitle">Publish official circulars targeting all students, specific sections, or individual classes</p>
+  </div>
+  <div>
+    <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#createNoticeModal">
+      <i class="fa-solid fa-bullhorn me-1"></i> Post Announcement
+    </button>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for n in notices %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card-custom h-100 d-flex flex-column">
+        <div class="card-custom-header">
+          <div class="d-flex align-items-center gap-2">
+            {% if n.target_type == 'all' %}
+              <span class="badge-custom badge-primary"><i class="fa-solid fa-globe me-1"></i> All School</span>
+            {% elif n.target_type == 'section' %}
+              <span class="badge-custom badge-info"><i class="fa-solid fa-sitemap me-1"></i> {{ n.section_name }}</span>
+            {% else %}
+              <span class="badge-custom badge-warning"><i class="fa-solid fa-graduation-cap me-1"></i> {{ n.class_name }}</span>
+            {% endif %}
+          </div>
+          <div>
+            {% if n.is_active %}
+              <span class="badge-custom badge-success">Active</span>
+            {% else %}
+              <span class="badge-custom badge-secondary">Archived</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-custom-body flex-grow-1">
+          <h5 class="fw-bold text-dark mb-2">{{ n.title }}</h5>
+          <p class="text-muted small mb-3" style="white-space: pre-line;">{{ n.content }}</p>
+        </div>
+        <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center small text-muted">
+          <div>
+            <i class="fa-regular fa-calendar me-1"></i> {{ n.publish_date }}
+            {% if n.expiry_date %}<span class="text-danger ms-1">(Expires: {{ n.expiry_date }})</span>{% endif %}
+          </div>
+          <form action="{{ url_for('admin.toggle_notice', notice_id=n.id) }}" method="POST">
+            <button type="submit" class="btn btn-sm btn-light border" title="Toggle Active">
+              <i class="fa-solid fa-power-off text-muted"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="col-12">
+      <div class="text-center py-5 card-custom">
+        <i class="fa-solid fa-bullhorn fs-1 mb-3 text-secondary opacity-50"></i>
+        <h5 class="fw-bold text-dark">No announcements published yet.</h5>
+        <p class="text-muted">Broadcast notices to keep parents and students informed.</p>
+        <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#createNoticeModal">Post Notice</button>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Create Notice Modal -->
+<div class="modal fade" id="createNoticeModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Post New Announcement</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin.notices') }}" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Announcement Title *</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. Annual Sports Meet 2026 / Term Examination Schedule" required>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">Target Audience *</label>
+              <select name="target_type" id="noticeTargetType" class="form-select" onchange="toggleNoticeTarget(this.value)">
+                <option value="all">Entire School (All Students)</option>
+                <option value="section">Specific School Section</option>
+                <option value="class">Specific Class</option>
+              </select>
+            </div>
+            <div class="col-md-4" id="targetSectionGroup" style="display: none;">
+              <label class="form-label">Select School Section</label>
+              <select name="target_section_id" class="form-select">
+                {% for s in sections %}
+                  <option value="{{ s.id }}">{{ s.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4" id="targetClassGroup" style="display: none;">
+              <label class="form-label">Select Class</label>
+              <select name="target_class_id" class="form-select">
+                {% for c in classes %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Publish Date</label>
+              <input type="date" name="publish_date" class="form-control" value="{{ now_date or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Expiry Date (Optional)</label>
+              <input type="date" name="expiry_date" class="form-control">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Notice Message / Details *</label>
+            <textarea name="content" class="form-control" rows="5" placeholder="Full notice content..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-custom">Publish Notice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleNoticeTarget(val) {
+    document.getElementById('targetSectionGroup').style.display = (val === 'section') ? 'block' : 'none';
+    document.getElementById('targetClassGroup').style.display = (val === 'class') ? 'block' : 'none';
+  }
+</script>
+{% endblock %}

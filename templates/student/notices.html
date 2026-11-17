@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}School Announcements - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">School Announcements & Circulars</h2>
+    <p class="page-subtitle">Official announcements published for your class and school section</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for n in notices %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card-custom h-100 d-flex flex-column">
+        <div class="card-custom-header">
+          <span class="badge-custom badge-primary">
+            {% if n.target_type == 'all' %}School-Wide
+            {% elif n.target_type == 'section' %}Section Notice
+            {% else %}Class Circular{% endif %}
+          </span>
+          <span class="small text-muted">{{ n.publish_date }}</span>
+        </div>
+        <div class="card-custom-body flex-grow-1">
+          <h5 class="fw-bold text-dark mb-2">{{ n.title }}</h5>
+          <p class="text-muted small mb-0" style="white-space: pre-line;">{{ n.content }}</p>
+        </div>
+        {% if n.author_name %}
+        <div class="p-3 bg-light border-top small text-muted">
+          <i class="fa-solid fa-user-pen me-1"></i> Posted by: {{ n.author_name }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="col-12">
+      <div class="text-center py-5 card-custom">
+        <i class="fa-regular fa-bell-slash fs-1 mb-3 text-secondary opacity-50"></i>
+        <h5 class="fw-bold text-dark">No announcements at this time.</h5>
+        <p class="text-muted">Check back later for updates from school administration.</p>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

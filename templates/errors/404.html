@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found (404) - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-5">
+  <div class="col-md-7 text-center">
+    <div class="card-custom p-5 shadow">
+      <div class="text-primary mb-3">
+        <i class="fa-solid fa-compass-drafting display-1"></i>
+      </div>
+      <h2 class="fw-bold text-dark">404 - Page Not Found</h2>
+      <p class="text-muted mb-4">
+        The requested school resource, record, or URL could not be located.
+      </p>
+      <div>
+        <a href="{{ url_for('index') }}" class="btn btn-primary-custom px-4">
+          <i class="fa-solid fa-house me-1"></i> Return to Portal Home
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

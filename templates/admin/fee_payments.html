@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Fee Payments - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Fee Collection & Payment Transactions</h2>
+    <p class="page-subtitle">Record cash, UPI, bank transfers, and print official fee receipts</p>
+  </div>
+  <div>
+    <button class="btn btn-primary-custom d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+      <i class="fa-solid fa-hand-holding-dollar"></i>
+      <span>Record Fee Payment</span>
+    </button>
+  </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card-custom mb-4">
+  <div class="card-custom-body p-3">
+    <form method="GET" action="{{ url_for('admin.payments') }}" class="row g-2 align-items-center">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+          <input type="text" name="search" class="form-control" placeholder="Search receipt number, student name, admission no..." value="{{ search }}">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select name="payment_method" class="form-select">
+          <option value="">All Payment Methods</option>
+          <option value="Cash" {% if selected_method == 'Cash' %}selected{% endif %}>Cash</option>
+          <option value="UPI" {% if selected_method == 'UPI' %}selected{% endif %}>UPI</option>
+          <option value="Bank Transfer" {% if selected_method == 'Bank Transfer' %}selected{% endif %}>Bank Transfer</option>
+          <option value="Cheque" {% if selected_method == 'Cheque' %}selected{% endif %}>Cheque</option>
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary-custom flex-grow-1">Filter</button>
+        <a href="{{ url_for('admin.payments') }}" class="btn btn-light border"><i class="fa-solid fa-rotate-left"></i></a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Payments Table -->
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title">
+      <i class="fa-solid fa-receipt text-success me-2"></i>Transaction Ledger
+      <span class="badge bg-light text-dark border ms-2">{{ payments|length }} Records</span>
+    </h5>
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom mb-0">
+      <thead>
+        <tr>
+          <th>Receipt No</th>
+          <th>Student Details</th>
+          <th>Class</th>
+          <th>Fee Category</th>
+          <th>Amount Paid</th>
+          <th>Method</th>
+          <th>Payment Date</th>
+          <th>Recorded By</th>
+          <th class="text-end">Receipt</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+          <tr>
+            <td>
+              <a href="{{ url_for('admin.payment_receipt', payment_id=p.id) }}" class="fw-bold text-primary text-decoration-none">
+                {{ p.receipt_number }}
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('admin.student_view', student_id=p.student_id) }}" class="fw-bold text-dark text-decoration-none hover-primary">
+                {{ p.student_name }}
+              </a>
+              <div class="text-muted small">Adm: {{ p.admission_number }}</div>
+            </td>
+            <td>{{ p.class_name or 'N/A' }}</td>
+            <td>{{ p.fee_category or 'Composite Fee' }}</td>
+            <td class="fw-bold text-success fs-6">{{ format_currency(p.amount_paid) }}</td>
+            <td><span class="badge-custom badge-primary">{{ p.payment_method }}</span></td>
+            <td>{{ p.payment_date }}</td>
+            <td class="text-muted small">{{ p.recorded_by_name or 'Admin' }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('admin.payment_receipt', payment_id=p.id) }}" class="btn btn-light border" title="View Receipt">
+                  <i class="fa-solid fa-eye text-primary"></i>
+                </a>
+                <a href="{{ url_for('admin.payment_receipt', payment_id=p.id, format='pdf') }}" target="_blank" class="btn btn-light border text-danger" title="Download PDF Receipt">
+                  <i class="fa-solid fa-file-pdf"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" class="text-center py-5 text-muted">
+              <i class="fa-solid fa-receipt fs-1 mb-3 opacity-50"></i>
+              <p class="mb-2">No payment transactions found.</p>
+              <button class="btn btn-sm btn-primary-custom" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">Record First Payment</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-cash-register text-success me-2"></i>Record Student Fee Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin.payments') }}" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Select Student *</label>
+            <select name="student_id" id="payment_student_select" class="form-select" required>
+              <option value="">-- Choose Student --</option>
+              {% for s in students %}
+                <option value="{{ s.id }}">{{ s.full_name }} ({{ s.admission_number }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Dynamic Outstanding Display Placeholder -->
+          <div id="student_outstanding_display"></div>
+
+          <div class="mb-3">
+            <label class="form-label">Fee Item / Structure (Optional)</label>
+            <select name="student_fee_assignment_id" id="payment_fee_assignment_select" class="form-select">
+              <option value="">-- General / Combined Fee Payment --</option>
+            </select>
+            <div class="form-text">Select specific fee to mark item status as Paid or Partial.</div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Amount Paid ($) *</label>
+              <input type="number" step="0.01" name="amount_paid" id="payment_amount_input" class="form-control" placeholder="0.00" min="0.01" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Payment Date *</label>
+              <input type="date" name="payment_date" class="form-control" value="{{ now_date or '' }}" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Payment Method *</label>
+              <select name="payment_method" class="form-select" required>
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Transaction / Cheque Reference</label>
+              <input type="text" name="transaction_reference" class="form-control" placeholder="e.g. UPI Ref / Cheque No">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Remarks / Note</label>
+            <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Term 1 installment received"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-custom">
+            <i class="fa-solid fa-check me-1"></i> Generate Receipt & Record Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

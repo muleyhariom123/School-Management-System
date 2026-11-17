@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - {{ student.full_name }} - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Student Profile & Settings</h2>
+    <p class="page-subtitle">View official student records and update permitted contact information</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Summary Card -->
+  <div class="col-lg-4">
+    <div class="card-custom text-center p-4">
+      <img src="{% if student.photo_path %}{{ url_for('static', filename=student.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+           alt="{{ student.full_name }}" class="rounded-circle border shadow-sm mx-auto mb-3" style="width: 100px; height: 100px; object-fit: cover;">
+      
+      <h4 class="fw-bold text-dark mb-1">{{ student.full_name }}</h4>
+      <p class="text-muted small mb-2">Admission No: <span class="badge-custom badge-secondary">{{ student.admission_number }}</span></p>
+      
+      <div class="p-3 bg-light rounded-3 text-start mb-3 border">
+        <div class="small mb-1"><b>Class:</b> {{ student.class_name }} (Section {{ student.class_section_name }})</div>
+        <div class="small mb-1"><b>Roll No:</b> {{ student.roll_number or '-' }}</div>
+        <div class="small mb-1"><b>Section:</b> {{ student.section_name }}</div>
+        <div class="small mb-1"><b>Academic Year:</b> {{ student.academic_year_name }}</div>
+        <div class="small"><b>Admission Date:</b> {{ student.admission_date or 'N/A' }}</div>
+      </div>
+
+      <button class="btn btn-outline-primary w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+        <i class="fa-solid fa-key me-1"></i> Change Account Password
+      </button>
+    </div>
+  </div>
+
+  <!-- Permitted Information Update Form -->
+  <div class="col-lg-8">
+    <div class="card-custom">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-address-book text-primary me-2"></i>Contact Details Update</h5>
+        <span class="badge-custom badge-success"><i class="fa-solid fa-shield-halved me-1"></i>Protected Records</span>
+      </div>
+
+      <div class="card-custom-body p-4">
+        <div class="alert alert-info py-2 px-3 small mb-4">
+          <i class="fa-solid fa-circle-info me-1"></i> <b>Notice:</b> Official admission information, class, roll numbers, fees, and attendance can only be modified by the Headmaster's office. You may update your contact information below.
+        </div>
+
+        <form action="{{ url_for('student.profile') }}" method="POST">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Student Contact Email</label>
+              <input type="email" name="student_email" class="form-control" value="{{ student.student_email or '' }}" placeholder="student@example.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Emergency Phone Contact</label>
+              <input type="tel" name="emergency_contact" class="form-control" value="{{ student.emergency_contact or '' }}" placeholder="+1 555-0199">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Residential Address</label>
+            <textarea name="residential_address" rows="3" class="form-control">{{ student.residential_address or '' }}</textarea>
+          </div>
+
+          <!-- Read-only Official Parent / Guardian Records -->
+          <h6 class="fw-bold text-dark border-top pt-3 mb-3">Official Guardian Records (Read-Only)</h6>
+          <div class="row g-3 mb-4 text-muted small">
+            <div class="col-md-6">
+              <label class="form-label mb-0">Father's Name:</label>
+              <div class="fw-semibold text-dark">{{ student.father_name or 'N/A' }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label mb-0">Mother's Name:</label>
+              <div class="fw-semibold text-dark">{{ student.mother_name or 'N/A' }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label mb-0">Guardian Name:</label>
+              <div class="fw-semibold text-dark">{{ student.guardian_name or 'N/A' }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label mb-0">Guardian Phone:</label>
+              <div class="fw-semibold text-dark">{{ student.guardian_phone or 'N/A' }}</div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end border-top pt-3">
+            <button type="submit" class="btn btn-primary-custom px-4">
+              <i class="fa-solid fa-floppy-disk me-1"></i> Update Contact Info
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

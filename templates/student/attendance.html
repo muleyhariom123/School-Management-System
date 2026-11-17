@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}My Attendance - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">My Attendance Record</h2>
+    <p class="page-subtitle">Track your attendance history and overall attendance percentage</p>
+  </div>
+</div>
+
+<!-- Attendance Overview Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card primary">
+      <div class="stat-icon primary"><i class="fa-solid fa-percent"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-value fs-4">{{ stats.rate }}%</div>
+        <div class="stat-meta text-primary">Cumulative</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card success">
+      <div class="stat-icon success"><i class="fa-solid fa-check"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Days Present</div>
+        <div class="stat-value fs-4">{{ stats.present }}</div>
+        <div class="stat-meta text-success">Total Present</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card danger">
+      <div class="stat-icon danger"><i class="fa-solid fa-xmark"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Days Absent</div>
+        <div class="stat-value fs-4">{{ stats.absent }}</div>
+        <div class="stat-meta text-danger">Unexcused</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card info">
+      <div class="stat-icon info"><i class="fa-solid fa-calendar-day"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Recorded Days</div>
+        <div class="stat-value fs-4">{{ stats.total }}</div>
+        <div class="stat-meta text-info">Total Tracked</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detailed Daily Register -->
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title"><i class="fa-solid fa-calendar-days text-primary me-2"></i>Attendance Log</h5>
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom mb-0">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in records %}
+          <tr>
+            <td class="fw-semibold text-dark">{{ r.date }}</td>
+            <td>
+              {% if r.status == 'Present' %}
+                <span class="badge-custom badge-success"><i class="fa-solid fa-check"></i> Present</span>
+              {% elif r.status == 'Absent' %}
+                <span class="badge-custom badge-danger"><i class="fa-solid fa-xmark"></i> Absent</span>
+              {% elif r.status == 'Late' %}
+                <span class="badge-custom badge-warning">Late</span>
+              {% else %}
+                <span class="badge-custom badge-info">Excused</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">{{ r.remarks or '-' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="3" class="text-center py-4 text-muted">No attendance entries recorded yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

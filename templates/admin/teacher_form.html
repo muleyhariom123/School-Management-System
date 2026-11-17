@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Add Faculty Member - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Register Teacher / Staff</h2>
+    <p class="page-subtitle">Create teacher profile, assign classes, and create teacher portal credentials</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.teachers') }}" class="btn btn-light border">
+      <i class="fa-solid fa-arrow-left me-1"></i> Back to Teachers
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-10 col-xl-9">
+    <div class="card-custom">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-user-tie text-primary me-2"></i>Teacher Registration Form</h5>
+      </div>
+
+      <div class="card-custom-body p-4">
+        <form action="{{ url_for('admin.teacher_create') }}" method="POST" enctype="multipart/form-data">
+          <!-- 1. Basic Info -->
+          <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">1. Personal & Professional Details</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Full Name *</label>
+              <input type="text" name="full_name" class="form-control" placeholder="e.g. Sarah Jenkins, M.Ed." required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Employee ID *</label>
+              <input type="text" name="employee_id" class="form-control" placeholder="e.g. EMP-2026-01" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Email Address</label>
+              <input type="email" name="email" class="form-control" placeholder="teacher@school.edu">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Contact Phone</label>
+              <input type="tel" name="phone" class="form-control" placeholder="+1 (555) 019-2835">
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Educational Qualification</label>
+              <input type="text" name="qualification" class="form-control" placeholder="e.g. M.Sc. Mathematics, B.Ed.">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Date of Joining</label>
+              <input type="date" name="joining_date" class="form-control">
+            </div>
+          </div>
+
+          <!-- Photo upload -->
+          <div class="mb-4 p-3 bg-light rounded-3 border">
+            <label class="form-label fw-bold">Faculty Photograph</label>
+            <input type="file" name="photo" class="form-control" accept="image/*">
+          </div>
+
+          <!-- 2. Assigned Classes & Subject -->
+          <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 mt-4">2. Class Teaching Assignments</h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Primary Subject Taught</label>
+              <input type="text" name="subject" class="form-control" placeholder="e.g. Mathematics, English, Science" value="General">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Assign Classes (Hold Ctrl to select multiple)</label>
+              <select name="class_ids" class="form-select" multiple size="4">
+                {% for c in classes %}
+                  <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Teacher can mark daily attendance only for assigned classes.</div>
+            </div>
+          </div>
+
+          <!-- 3. Portal Account -->
+          <h6 class="fw-bold text-dark border-bottom pb-2 mb-3 mt-4">3. Teacher Portal Login Credentials</h6>
+          <div class="row g-3 mb-4 bg-light p-3 rounded-3 border">
+            <div class="col-md-6">
+              <label class="form-label">Username</label>
+              <input type="text" name="username" class="form-control" placeholder="Defaults to Employee ID">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Initial Password</label>
+              <input type="text" name="password" class="form-control" placeholder="Defaults to Teach@{EmployeeID}">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 border-top pt-4">
+            <a href="{{ url_for('admin.teachers') }}" class="btn btn-light border px-4">Cancel</a>
+            <button type="submit" class="btn btn-primary-custom px-4">
+              <i class="fa-solid fa-check me-1"></i> Register Faculty
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

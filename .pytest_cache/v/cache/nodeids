@@ -1,0 +1,12 @@
+[
+  "test_app.py::SchoolManagementSystemTestCase::test_01_branding_and_settings",
+  "test_app.py::SchoolManagementSystemTestCase::test_02_authentication_and_roles",
+  "test_app.py::SchoolManagementSystemTestCase::test_03_headmaster_financial_calculations",
+  "test_app.py::SchoolManagementSystemTestCase::test_04_pdf_generation",
+  "test_app.py::SchoolManagementSystemTestCase::test_05_csv_export",
+  "test_app.py::SchoolManagementSystemTestCase::test_06_student_admission_and_duplicate_prevention",
+  "test_app.py::SchoolManagementSystemTestCase::test_07_attendance_submission_and_duplicate_prevention",
+  "test_app.py::SchoolManagementSystemTestCase::test_08_student_isolation_security",
+  "test_app.py::SchoolManagementSystemTestCase::test_09_teacher_class_restriction",
+  "test_app.py::SchoolManagementSystemTestCase::test_10_student_permitted_profile_updates"
+]

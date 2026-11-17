@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.full_name }} ({{ student.admission_number }}) - Student Record - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<!-- Top Header with Actions -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">{{ student.full_name }}</h2>
+    <p class="page-subtitle">Admission #{{ student.admission_number }} &bull; {{ student.class_name }} ({{ student.class_section_name }}) &bull; {{ student.section_name }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('admin.student_pdf', student_id=student.id) }}" target="_blank" class="btn btn-light border text-danger">
+      <i class="fa-solid fa-file-pdf me-1"></i> Print PDF
+    </a>
+    <a href="{{ url_for('admin.student_edit', student_id=student.id) }}" class="btn btn-light border">
+      <i class="fa-solid fa-pen-to-square me-1"></i> Edit Profile
+    </a>
+    {% if student.status == 'Active' %}
+      <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#archiveStudentModal">
+        <i class="fa-solid fa-box-archive me-1"></i> Archive
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Student Header Card -->
+<div class="card-custom mb-4">
+  <div class="card-custom-body p-4">
+    <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+      <img src="{% if student.photo_path %}{{ url_for('static', filename=student.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+           alt="{{ student.full_name }}" class="rounded-4 border shadow-sm" style="width: 110px; height: 110px; object-fit: cover;">
+      
+      <div class="flex-grow-1 text-center text-md-start">
+        <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-2 mb-2">
+          <h3 class="fw-bold mb-0 text-dark">{{ student.full_name }}</h3>
+          {% if student.status == 'Active' %}
+            <span class="badge-custom badge-success"><i class="fa-solid fa-circle-check"></i> Active</span>
+          {% else %}
+            <span class="badge-custom badge-secondary">{{ student.status }}</span>
+          {% endif %}
+        </div>
+        <div class="row g-2 text-muted small">
+          <div class="col-sm-6 col-lg-3"><b>Section:</b> {{ student.section_name }}</div>
+          <div class="col-sm-6 col-lg-3"><b>Class:</b> {{ student.class_name }} ({{ student.class_section_name }})</div>
+          <div class="col-sm-6 col-lg-3"><b>Roll Number:</b> {{ student.roll_number or 'N/A' }}</div>
+          <div class="col-sm-6 col-lg-3"><b>Academic Year:</b> {{ student.academic_year_name }}</div>
+          <div class="col-sm-6 col-lg-3"><b>Admission Date:</b> {{ student.admission_date or 'N/A' }}</div>
+          <div class="col-sm-6 col-lg-3"><b>Portal Login:</b> <code>{{ student.account_username or 'Not Set' }}</code></div>
+          <div class="col-sm-6 col-lg-3"><b>Guardian Phone:</b> {{ student.guardian_phone or 'N/A' }}</div>
+          <div class="col-sm-6 col-lg-3"><b>Attendance Rate:</b> <span class="fw-bold text-primary">{{ att_rate }}%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-pills mb-4" id="studentTabs" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-profile">
+      <i class="fa-solid fa-user me-2"></i>Personal & Family Info
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-finances">
+      <i class="fa-solid fa-receipt me-2"></i>Fee Statement & Receipts
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-attendance">
+      <i class="fa-solid fa-calendar-check me-2"></i>Attendance Log
+    </button>
+  </li>
+</ul>
+
+<!-- Tab Contents -->
+<div class="tab-content" id="studentTabsContent">
+  <!-- TAB 1: Profile & Family Information -->
+  <div class="tab-pane fade show active" id="tab-profile">
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card-custom h-100">
+          <div class="card-custom-header">
+            <h5 class="card-custom-title"><i class="fa-solid fa-user-circle text-primary me-2"></i>Personal Details</h5>
+          </div>
+          <div class="card-custom-body p-0">
+            <table class="table-custom mb-0">
+              <tbody>
+                <tr><th style="width: 40%;">Full Name</th><td>{{ student.full_name }}</td></tr>
+                <tr><th>Admission Number</th><td><span class="badge-custom badge-secondary">{{ student.admission_number }}</span></td></tr>
+                <tr><th>Date of Birth</th><td>{{ student.dob or 'Not recorded' }}</td></tr>
+                <tr><th>Gender</th><td>{{ student.gender or 'Not specified' }}</td></tr>
+                <tr><th>Email Address</th><td>{{ student.student_email or 'None' }}</td></tr>
+                <tr><th>Previous School</th><td>{{ student.previous_school or 'None' }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card-custom h-100">
+          <div class="card-custom-header">
+            <h5 class="card-custom-title"><i class="fa-solid fa-people-roof text-primary me-2"></i>Guardian & Emergency Contact</h5>
+          </div>
+          <div class="card-custom-body p-0">
+            <table class="table-custom mb-0">
+              <tbody>
+                <tr><th style="width: 40%;">Primary Guardian</th><td>{{ student.guardian_name or 'N/A' }}</td></tr>
+                <tr><th>Father's Name</th><td>{{ student.father_name or 'N/A' }}</td></tr>
+                <tr><th>Mother's Name</th><td>{{ student.mother_name or 'N/A' }}</td></tr>
+                <tr><th>Guardian Phone</th><td>{{ student.guardian_phone or 'N/A' }}</td></tr>
+                <tr><th>Emergency Contact</th><td>{{ student.emergency_contact or 'N/A' }}</td></tr>
+                <tr><th>Residential Address</th><td>{{ student.residential_address or 'N/A' }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Fee Statement & Receipts -->
+  <div class="tab-pane fade" id="tab-finances">
+    <!-- Financial Stat Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="stat-card primary">
+          <div class="stat-icon primary"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+          <div class="stat-details">
+            <div class="stat-label">Total Assigned</div>
+            <div class="stat-value fs-4">{{ format_currency(financial.total_assigned) }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="stat-card warning">
+          <div class="stat-icon warning"><i class="fa-solid fa-tag"></i></div>
+          <div class="stat-details">
+            <div class="stat-label">Concessions</div>
+            <div class="stat-value fs-4">{{ format_currency(financial.total_concession) }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="stat-card success">
+          <div class="stat-icon success"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="stat-details">
+            <div class="stat-label">Total Paid</div>
+            <div class="stat-value fs-4">{{ format_currency(financial.total_paid) }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="stat-card danger">
+          <div class="stat-icon danger"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div class="stat-details">
+            <div class="stat-label">Outstanding Balance</div>
+            <div class="stat-value fs-4">{{ format_currency(financial.outstanding_balance) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assigned Fee Items -->
+    <div class="card-custom mb-4">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-list-check text-primary me-2"></i>Assigned Fee Structures</h5>
+        <a href="{{ url_for('admin.payments') }}" class="btn btn-sm btn-primary-custom">
+          <i class="fa-solid fa-receipt me-1"></i> Record Payment
+        </a>
+      </div>
+      <div class="table-responsive p-0">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Fee Category</th>
+              <th>Due Date</th>
+              <th>Assigned</th>
+              <th>Concession</th>
+              <th>Paid</th>
+              <th>Remaining</th>
+              <th>Status</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in fees %}
+              {% set effective_due = f.assigned_amount - f.concession_amount %}
+              {% set rem = effective_due - f.paid_for_item %}
+              <tr>
+                <td class="fw-bold text-dark">{{ f.fee_category }}</td>
+                <td class="text-muted small">{{ f.due_date or 'End of Term' }}</td>
+                <td>{{ format_currency(f.assigned_amount) }}</td>
+                <td class="text-warning">{{ format_currency(f.concession_amount) }}</td>
+                <td class="text-success fw-bold">{{ format_currency(f.paid_for_item) }}</td>
+                <td class="{% if rem > 0 %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                  {{ format_currency(rem if rem > 0 else 0) }}
+                </td>
+                <td>
+                  {% if f.paid_for_item >= effective_due and effective_due > 0 %}
+                    <span class="badge-custom badge-success">Paid</span>
+                  {% elif f.paid_for_item > 0 %}
+                    <span class="badge-custom badge-warning">Partial</span>
+                  {% else %}
+                    <span class="badge-custom badge-danger">Pending</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <button class="btn btn-sm btn-light border" onclick="openConcessionModal({{ f.id }}, '{{ f.fee_category }}', {{ f.concession_amount }})">
+                    <i class="fa-solid fa-tag text-muted" title="Apply Discount/Concession"></i>
+                  </button>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="8" class="text-center py-4 text-muted">No fee structures assigned.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Payment Transaction History -->
+    <div class="card-custom">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-clock-rotate-left text-success me-2"></i>Recorded Payment Transactions</h5>
+      </div>
+      <div class="table-responsive p-0">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Receipt Number</th>
+              <th>Date</th>
+              <th>Amount Paid</th>
+              <th>Method</th>
+              <th>Reference</th>
+              <th>Recorded By</th>
+              <th class="text-end">Print / PDF</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payments %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('admin.payment_receipt', payment_id=p.id) }}" class="fw-bold text-primary text-decoration-none">
+                    {{ p.receipt_number }}
+                  </a>
+                </td>
+                <td>{{ p.payment_date }}</td>
+                <td class="fw-bold text-success">{{ format_currency(p.amount_paid) }}</td>
+                <td><span class="badge-custom badge-primary">{{ p.payment_method }}</span></td>
+                <td class="text-muted small">{{ p.transaction_reference or '-' }}</td>
+                <td class="text-muted small">{{ p.recorded_by_name or 'Admin' }}</td>
+                <td class="text-end">
+                  <a href="{{ url_for('admin.payment_receipt', payment_id=p.id, format='pdf') }}" target="_blank" class="btn btn-sm btn-light border text-danger" title="Download PDF">
+                    <i class="fa-solid fa-file-pdf"></i>
+                  </a>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="7" class="text-center py-4 text-muted">No payments recorded for this student yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Attendance History -->
+  <div class="tab-pane fade" id="tab-attendance">
+    <div class="card-custom">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-calendar-days text-primary me-2"></i>Attendance Log</h5>
+        <div class="d-flex align-items-center gap-3">
+          <span class="badge-custom badge-primary">Rate: {{ att_rate }}%</span>
+          <span class="small text-muted">{{ present_att_days }} Present / {{ total_att_days }} Total Recorded</span>
+        </div>
+      </div>
+      <div class="table-responsive p-0">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in attendance %}
+              <tr>
+                <td class="fw-medium">{{ a.date }}</td>
+                <td>
+                  {% if a.status == 'Present' %}
+                    <span class="badge-custom badge-success"><i class="fa-solid fa-check"></i> Present</span>
+                  {% elif a.status == 'Absent' %}
+                    <span class="badge-custom badge-danger"><i class="fa-solid fa-xmark"></i> Absent</span>
+                  {% elif a.status == 'Late' %}
+                    <span class="badge-custom badge-warning">Late</span>
+                  {% else %}
+                    <span class="badge-custom badge-info">Excused</span>
+                  {% endif %}
+                </td>
+                <td class="text-muted small">{{ a.remarks or '-' }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="3" class="text-center py-4 text-muted">No attendance recorded yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Concession Modal -->
+<div class="modal fade" id="concessionModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Apply Fee Concession / Discount</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('admin.apply_concession') }}" method="POST">
+        <input type="hidden" name="student_fee_assignment_id" id="modal_concession_assignment_id">
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Record authorized discount or scholarship concession. Outstanding balance will automatically recalculate.</p>
+          <div class="mb-3">
+            <label class="form-label">Fee Item</label>
+            <input type="text" id="modal_concession_cat_name" class="form-control" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Concession Amount ($) *</label>
+            <input type="number" step="0.01" name="concession_amount" id="modal_concession_amount" class="form-control" required min="0">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Authorized Reason / Authority *</label>
+            <textarea name="concession_reason" class="form-control" rows="2" placeholder="e.g. Merit scholarship / sibling discount approved by Headmaster" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-custom">Apply Concession</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Archive Student Confirmation Modal -->
+<div class="modal fade" id="archiveStudentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Archive Student Record</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to archive <b>{{ student.full_name }}</b> ({{ student.admission_number }})?</p>
+        <p class="small text-muted mb-0">Historical academic and financial records will remain strictly preserved in the database, but student portal access will be deactivated.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('admin.student_archive', student_id=student.id) }}" method="POST">
+          <button type="submit" class="btn btn-danger">Confirm Archive</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openConcessionModal(id, cat, curAmt) {
+    document.getElementById('modal_concession_assignment_id').value = id;
+    document.getElementById('modal_concession_cat_name').value = cat;
+    document.getElementById('modal_concession_amount').value = curAmt || 0;
+    const m = new bootstrap.Modal(document.getElementById('concessionModal'));
+    m.show();
+  }
+</script>
+{% endblock %}

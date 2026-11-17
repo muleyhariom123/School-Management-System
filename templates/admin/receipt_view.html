@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Receipt #{{ payment.receipt_number }} - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div>
+    <h2 class="page-title">Fee Receipt Details</h2>
+    <p class="page-subtitle">Official payment acknowledgement for Receipt #{{ payment.receipt_number }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('admin.payments') }}" class="btn btn-light border">
+      <i class="fa-solid fa-arrow-left me-1"></i> Back to Payments
+    </a>
+    <button onclick="window.print()" class="btn btn-light border">
+      <i class="fa-solid fa-print me-1"></i> Print Receipt
+    </button>
+    <a href="{{ url_for('admin.payment_receipt', payment_id=payment.id, format='pdf') }}" target="_blank" class="btn btn-primary-custom">
+      <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+    <div class="card-custom p-4 p-md-5 bg-white shadow">
+      <!-- Branded Header -->
+      <div class="d-flex align-items-center justify-content-between pb-4 border-bottom mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <img src="{% if school_settings.logo_path %}{{ url_for('static', filename=school_settings.logo_path) }}{% else %}{{ url_for('static', filename='images/default_logo.png') }}{% endif %}" 
+               alt="Logo" class="rounded border p-1" style="width: 75px; height: 75px; object-fit: contain;">
+          <div>
+            <h3 class="fw-bold text-dark mb-1">{{ school_settings.school_name }}</h3>
+            <p class="text-muted small mb-0">{{ school_settings.school_address }}</p>
+            <p class="text-muted small mb-0">Phone: {{ school_settings.school_phone }} | Email: {{ school_settings.school_email }}</p>
+          </div>
+        </div>
+        <div class="text-end">
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6 fw-bold">PAID RECEIPT</span>
+          <div class="fw-bold text-dark mt-2">#{{ payment.receipt_number }}</div>
+          <div class="text-muted small">{{ payment.payment_date }}</div>
+        </div>
+      </div>
+
+      <!-- Student & Payment Metadata Grid -->
+      <div class="row g-3 p-3 bg-light rounded-3 mb-4 border">
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Student Name</div>
+          <div class="fw-bold text-dark">{{ payment.student_name }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Admission No</div>
+          <div class="fw-bold text-dark">{{ payment.admission_number }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Class & Section</div>
+          <div class="fw-bold text-dark">{{ payment.class_name }} ({{ payment.section_name }})</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Academic Year</div>
+          <div class="fw-bold text-dark">{{ payment.academic_year or 'Current' }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Payment Method</div>
+          <div class="fw-bold text-primary">{{ payment.payment_method }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Transaction Ref</div>
+          <div class="fw-bold text-dark">{{ payment.transaction_reference or 'N/A' }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Payment Date</div>
+          <div class="fw-bold text-dark">{{ payment.payment_date }}</div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="text-muted small">Cashier / Staff</div>
+          <div class="fw-bold text-dark">{{ payment.cashier_name or 'Accounts' }}</div>
+        </div>
+      </div>
+
+      <!-- Item Breakdown Table -->
+      <div class="table-responsive mb-4">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Description / Fee Category</th>
+              <th class="text-end">Amount Paid</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">{{ payment.fee_category or 'School Tuition / Composite Fee' }}</div>
+                <small class="text-muted">Direct fee payment towards student account</small>
+              </td>
+              <td class="text-end fw-bold fs-5 text-success">
+                {{ format_currency(payment.amount_paid) }}
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="table-light">
+              <th class="text-end">Total Amount Received:</th>
+              <th class="text-end fw-bold fs-5 text-success">{{ format_currency(payment.amount_paid) }}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Financial Balance Status -->
+      <div class="p-3 bg-light rounded-3 border mb-5 text-center">
+        <span class="text-muted me-2">Remaining Outstanding Balance for this Academic Year:</span>
+        <span class="fw-bold fs-6 {% if payment.outstanding_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+          {{ format_currency(payment.outstanding_balance) }}
+        </span>
+      </div>
+
+      <!-- Signatures -->
+      <div class="row pt-5 mt-4 text-center">
+        <div class="col-6">
+          <div class="border-top pt-2 mx-auto" style="width: 200px;">
+            <div class="small fw-bold">Cashier / Accounts Officer</div>
+            <div class="text-muted" style="font-size: 0.72rem;">Authorized Signature</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="border-top pt-2 mx-auto" style="width: 200px;">
+            <div class="small fw-bold">{{ school_settings.headmaster_name or 'Headmaster' }}</div>
+            <div class="text-muted" style="font-size: 0.72rem;">Official Stamp & Seal</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center text-muted mt-5 small">
+        * This is an official computer-generated fee receipt of {{ school_settings.school_name }}.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

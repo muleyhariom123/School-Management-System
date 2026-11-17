@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - {{ teacher.full_name }} - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Teacher Dashboard</h2>
+    <p class="page-subtitle">Welcome, <b>{{ teacher.full_name }}</b> (Employee ID: {{ teacher.employee_id }})</p>
+  </div>
+  <div>
+    <a href="{{ url_for('teacher.attendance') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+      <i class="fa-solid fa-clipboard-check"></i>
+      <span>Mark Today's Attendance</span>
+    </a>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-md-4">
+    <div class="stat-card primary">
+      <div class="stat-icon primary"><i class="fa-solid fa-chalkboard"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Assigned Classes</div>
+        <div class="stat-value">{{ assigned_classes|length }}</div>
+        <div class="stat-meta text-primary">Class Portfolios</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-4">
+    <div class="stat-card info">
+      <div class="stat-icon info"><i class="fa-solid fa-user-graduate"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Total Assigned Students</div>
+        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-meta text-info">Under Instruction</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-md-4">
+    <div class="stat-card success">
+      <div class="stat-icon success"><i class="fa-solid fa-clipboard-user"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Today's Attendance</div>
+        <div class="stat-value">{{ today_marked }}</div>
+        <div class="stat-meta text-success">Marked Students</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assigned Classes Cards -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-layer-group text-primary me-2"></i>My Teaching Classes</h5>
+        <a href="{{ url_for('teacher.students') }}" class="text-primary small text-decoration-none fw-semibold">View All Students</a>
+      </div>
+      <div class="table-responsive p-0">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Section / Division</th>
+              <th>School Section</th>
+              <th>Subject</th>
+              <th>Students</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ac in assigned_classes %}
+              <tr>
+                <td class="fw-bold text-dark">{{ ac.class_name }}</td>
+                <td><span class="badge-custom badge-secondary">Section {{ ac.section_name or 'A' }}</span></td>
+                <td><span class="badge-custom badge-primary">{{ ac.school_section_name }}</span></td>
+                <td>{{ ac.subject or 'General' }}</td>
+                <td><span class="fw-bold">{{ ac.student_count }}</span> Enrolled</td>
+                <td class="text-end">
+                  <a href="{{ url_for('teacher.attendance', class_id=ac.class_id, class_section_id=ac.class_section_id) }}" class="btn btn-sm btn-light border text-primary">
+                    <i class="fa-solid fa-clipboard-check me-1"></i> Register
+                  </a>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">No classes currently assigned.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announcements -->
+  <div class="col-lg-4">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-bullhorn text-warning me-2"></i>Staff Notices</h5>
+      </div>
+      <div class="card-custom-body p-3">
+        {% for n in notices %}
+          <div class="p-3 mb-2 rounded-3 bg-light border">
+            <div class="fw-bold text-dark small mb-1">{{ n.title }}</div>
+            <p class="text-muted small mb-0" style="font-size: 0.775rem;">{{ n.content[:100] }}...</p>
+            <div class="text-muted mt-2" style="font-size: 0.7rem;">{{ n.publish_date }}</div>
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted small">No active announcements.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

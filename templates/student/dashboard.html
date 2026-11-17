@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - {{ student.full_name }} - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<!-- Welcome Banner -->
+<div class="card-custom mb-4 overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #fff;">
+  <div class="card-custom-body p-4 p-md-5">
+    <div class="row align-items-center g-4">
+      <div class="col-md-8">
+        <div class="d-flex align-items-center gap-4">
+          <img src="{% if student.photo_path %}{{ url_for('static', filename=student.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+               alt="{{ student.full_name }}" class="rounded-circle border border-3 border-white shadow" style="width: 85px; height: 85px; object-fit: cover;">
+          <div>
+            <span class="badge bg-white text-primary fw-bold text-uppercase px-2 py-1 mb-2">Student Account</span>
+            <h2 class="fw-bold mb-1">Welcome back, {{ student.full_name }}!</h2>
+            <p class="mb-0 opacity-75">
+              Admission No: <b>{{ student.admission_number }}</b> &bull; {{ student.class_name }} (Section {{ student.class_section_name }}) &bull; Roll No: {{ student.roll_number or '-' }}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <div class="p-3 bg-white bg-opacity-10 rounded-3 backdrop-blur text-center text-md-end">
+          <div class="small opacity-75">Academic Year</div>
+          <div class="fw-bold fs-5">{{ student.academic_year_name }}</div>
+          <div class="small opacity-75 mt-1">{{ student.section_name }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Financial & Attendance Overview Row -->
+<div class="row g-3 mb-4">
+  <!-- Fee Summary Cards -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card primary">
+      <div class="stat-icon primary"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Total Assigned Fees</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.total_assigned) }}</div>
+        <div class="stat-meta text-muted">Academic Year</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card success">
+      <div class="stat-icon success"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Amount Paid</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.total_paid) }}</div>
+        <div class="stat-meta text-success">Verified Receipts</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card {% if financial.outstanding_balance > 0 %}danger{% else %}success{% endif %}">
+      <div class="stat-icon {% if financial.outstanding_balance > 0 %}danger{% else %}success{% endif %}">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </div>
+      <div class="stat-details">
+        <div class="stat-label">Outstanding Balance</div>
+        <div class="stat-value fs-4">{{ format_currency(financial.outstanding_balance) }}</div>
+        <div class="stat-meta {% if financial.outstanding_balance > 0 %}text-danger{% else %}text-success{% endif %}">
+          {% if financial.outstanding_balance > 0 %}Pending Payment{% else %}Fully Settled{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card info">
+      <div class="stat-icon info"><i class="fa-solid fa-user-check"></i></div>
+      <div class="stat-details">
+        <div class="stat-label">Attendance Rate</div>
+        <div class="stat-value fs-4">{{ attendance.rate }}%</div>
+        <div class="stat-meta text-info">{{ attendance.present_days }} / {{ attendance.total_days }} Days Present</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Details & Notices Row -->
+<div class="row g-4">
+  <!-- Recent Payments & Download Receipts -->
+  <div class="col-lg-6">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-receipt text-success me-2"></i>My Recent Payments</h5>
+        <a href="{{ url_for('student.fees') }}" class="text-primary text-decoration-none small fw-semibold">View All</a>
+      </div>
+      <div class="p-0 table-responsive">
+        <table class="table-custom mb-0">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th class="text-end">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in recent_payments %}
+              <tr>
+                <td class="fw-bold">{{ p.receipt_number }}</td>
+                <td>{{ p.payment_date }}</td>
+                <td class="fw-bold text-success">{{ format_currency(p.amount_paid) }}</td>
+                <td><span class="badge-custom badge-primary">{{ p.payment_method }}</span></td>
+                <td class="text-end">
+                  <a href="{{ url_for('student.download_receipt', payment_id=p.id) }}" class="btn btn-sm btn-light border text-danger" title="Download Official PDF Receipt">
+                    <i class="fa-solid fa-file-pdf"></i>
+                  </a>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">No payments recorded yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Relevant Announcements -->
+  <div class="col-lg-6">
+    <div class="card-custom h-100">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title"><i class="fa-solid fa-bullhorn text-warning me-2"></i>School Announcements</h5>
+        <a href="{{ url_for('student.notices') }}" class="text-primary text-decoration-none small fw-semibold">All Notices</a>
+      </div>
+      <div class="card-custom-body p-3">
+        {% for n in notices %}
+          <div class="p-3 mb-2 rounded-3 bg-light border">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="fw-bold text-dark">{{ n.title }}</span>
+              <span class="text-muted small">{{ n.publish_date }}</span>
+            </div>
+            <p class="text-muted small mb-0">{{ n.content }}</p>
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted">
+            <i class="fa-regular fa-bell-slash fs-1 mb-2 opacity-50"></i>
+            <p class="mb-0">No active announcements for your class.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

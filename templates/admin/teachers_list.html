@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Teachers & Staff - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Teachers & Academic Staff</h2>
+    <p class="page-subtitle">Manage faculty profiles, employee IDs, and class assignments</p>
+  </div>
+  <div>
+    <a href="{{ url_for('admin.teacher_create') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+      <i class="fa-solid fa-user-plus"></i>
+      <span>Add Teacher</span>
+    </a>
+  </div>
+</div>
+
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title">
+      <i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Faculty Directory
+      <span class="badge bg-light text-dark border ms-2">{{ teachers|length }} Faculty Members</span>
+    </h5>
+    <input type="text" id="tableQuickSearch" class="form-control form-control-sm" placeholder="Search teachers..." style="width: 220px;">
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom filterable-table mb-0">
+      <thead>
+        <tr>
+          <th>Teacher Details</th>
+          <th>Employee ID</th>
+          <th>Contact</th>
+          <th>Qualification</th>
+          <th>Classes Assigned</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teachers %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <img src="{% if t.photo_path %}{{ url_for('static', filename=t.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+                     alt="Photo" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;">
+                <div>
+                  <div class="fw-bold text-dark">{{ t.full_name }}</div>
+                  <div class="text-muted small">Username: <code>{{ t.username }}</code></div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge-custom badge-secondary">{{ t.employee_id }}</span></td>
+            <td>
+              <div>{{ t.email or '-' }}</div>
+              <div class="text-muted small">{{ t.phone or '-' }}</div>
+            </td>
+            <td>{{ t.qualification or 'Not specified' }}</td>
+            <td>
+              <span class="badge-custom badge-primary">
+                {{ t.assigned_classes_count }} Classes
+              </span>
+            </td>
+            <td>
+              {% if t.status == 'Active' %}
+                <span class="badge-custom badge-success"><i class="fa-solid fa-check"></i> Active</span>
+              {% else %}
+                <span class="badge-custom badge-secondary">{{ t.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="fa-solid fa-chalkboard-user fs-1 mb-3 opacity-50"></i>
+              <p class="mb-2">No teachers registered yet.</p>
+              <a href="{{ url_for('admin.teacher_create') }}" class="btn btn-sm btn-primary-custom">Add Teacher</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}My Assigned Students - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Assigned Class Roster</h2>
+    <p class="page-subtitle">Enrolled students in the classes currently under your instruction</p>
+  </div>
+</div>
+
+<div class="card-custom">
+  <div class="card-custom-header">
+    <h5 class="card-custom-title">
+      <i class="fa-solid fa-users text-primary me-2"></i>Students Under Instruction
+      <span class="badge bg-light text-dark border ms-2">{{ students|length }} Students</span>
+    </h5>
+    <input type="text" id="tableQuickSearch" class="form-control form-control-sm" placeholder="Search student name..." style="width: 220px;">
+  </div>
+  <div class="table-responsive p-0">
+    <table class="table-custom filterable-table mb-0">
+      <thead>
+        <tr>
+          <th>Student Details</th>
+          <th>Admission No</th>
+          <th>Class & Section</th>
+          <th>Roll No</th>
+          <th>Emergency Contact</th>
+          <th>Residential Area</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for st in students %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                <img src="{% if st.photo_path %}{{ url_for('static', filename=st.photo_path) }}{% else %}{{ url_for('static', filename='images/default_avatar.png') }}{% endif %}" 
+                     alt="Photo" class="rounded-circle border" style="width: 36px; height: 36px; object-fit: cover;">
+                <div>
+                  <div class="fw-bold text-dark">{{ st.full_name }}</div>
+                  <div class="text-muted small">Gender: {{ st.gender or 'N/A' }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge-custom badge-secondary">{{ st.admission_number }}</span></td>
+            <td><span class="badge-custom badge-primary">{{ st.class_name }} ({{ st.class_section_name }})</span></td>
+            <td><span class="fw-bold">{{ st.roll_number or '-' }}</span></td>
+            <td>
+              <div><i class="fa-solid fa-phone text-muted me-1"></i>{{ st.guardian_phone or '-' }}</div>
+              {% if st.emergency_contact %}
+                <small class="text-danger">Alt: {{ st.emergency_contact }}</small>
+              {% endif %}
+            </td>
+            <td class="text-muted small">{{ st.residential_address or '-' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              No students enrolled in your assigned classes.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

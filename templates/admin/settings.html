@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}School Settings - {{ school_settings.school_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2 class="page-title">School Profile & Global Settings</h2>
+    <p class="page-subtitle">Central school branding, official contact information, and logo management</p>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-10 col-xl-9">
+    <div class="card-custom">
+      <div class="card-custom-header">
+        <h5 class="card-custom-title">
+          <i class="fa-solid fa-school text-primary me-2"></i>Official Institution Identity
+        </h5>
+        <span class="badge-custom badge-info"><i class="fa-solid fa-arrows-rotate me-1"></i>Updates Everywhere</span>
+      </div>
+
+      <div class="card-custom-body p-4">
+        <form action="{{ url_for('admin.settings') }}" method="POST" enctype="multipart/form-data">
+          <!-- Logo and Official Name Preview -->
+          <div class="d-flex align-items-center gap-4 p-3 bg-light rounded-3 mb-4 border">
+            <div class="text-center">
+              <img src="{% if settings.logo_path %}{{ url_for('static', filename=settings.logo_path) }}{% else %}{{ url_for('static', filename='images/default_logo.png') }}{% endif %}" 
+                   alt="Logo" class="rounded border p-1 bg-white shadow-sm" style="width: 80px; height: 80px; object-fit: contain;">
+              <div class="small text-muted mt-1">Current Logo</div>
+            </div>
+            <div class="flex-grow-1">
+              <label class="form-label fw-bold">Upload Official School Logo</label>
+              <input type="file" name="logo" class="form-control" accept="image/png, image/jpeg, image/webp">
+              <div class="form-text">Upload crisp PNG or JPEG with transparent or clean background (Max 5MB).</div>
+            </div>
+          </div>
+
+          <!-- Official School Name -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Official School Name *</label>
+            <input type="text" name="school_name" class="form-control form-control-lg" value="{{ settings.school_name }}" required>
+            <div class="form-text text-primary">
+              <i class="fa-solid fa-circle-info me-1"></i> This name appears centrally on all headers, sidebars, student portals, fee receipts, reports, and PDFs.
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">School Phone Number</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fa-solid fa-phone"></i></span>
+                <input type="text" name="school_phone" class="form-control" value="{{ settings.school_phone }}" placeholder="+1 (555) 019-2834">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">School Official Email</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fa-solid fa-envelope"></i></span>
+                <input type="email" name="school_email" class="form-control" value="{{ settings.school_email }}" placeholder="info@school.edu">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Official School Address</label>
+            <textarea name="school_address" rows="3" class="form-control" placeholder="Complete institutional street address, state, and postal code">{{ settings.school_address }}</textarea>
+            <div class="form-text">Displayed on official printable receipts, report cards, and student admission forms.</div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">Official Website</label>
+              <input type="text" name="school_website" class="form-control" value="{{ settings.school_website }}" placeholder="https://www.school.edu">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Headmaster / Principal Name</label>
+              <input type="text" name="headmaster_name" class="form-control" value="{{ settings.headmaster_name }}" placeholder="Dr. Robert Vance">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Currency Symbol</label>
+              <input type="text" name="currency_symbol" class="form-control" value="{{ settings.currency_symbol }}" maxlength="5">
+              <div class="form-text">e.g. $, ₹, £, €, etc.</div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 border-top pt-4">
+            <button type="submit" class="btn btn-primary-custom px-4 py-2">
+              <i class="fa-solid fa-floppy-disk me-2"></i> Save & Apply School Profile
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
